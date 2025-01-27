@@ -6,6 +6,35 @@ Rust 快速参考备忘单，旨在为编写基本语法和方法提供帮助。
 入门
 ---
 
+### 配置 vscode 调试
+<!--rehype:wrap-class=row-span-2-->
+
+[配置参考](https://github.com/vadimcn/vscode-lldb/blob/master/MANUAL.md#source-path-remapping)。下载 CodeLLDB，选择 rust 自动生成 launch.json 文件
+
+```json
+{
+  "configurations": [
+    // 添加一下行，使 vec/hashmap 等类型显示正常
+    "sourceLanguages": ["rust"]
+  ]
+}
+```
+<!--rehype:className=wrap-text -->
+
+----
+
+将编译文件与标准库的位置进行映射
+
+```json
+{
+  "lldb.launch.sourceMap": {
+    // 你自己的映射 hash 和映射路径
+    "/rustc/4b91a6ea7258a947e59c6522cd5898e7c0a6a88f": "/Users/feiwu/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust"
+  }
+}
+```
+<!--rehype:className=wrap-text -->
+
 ### Hello_World.rs
 
 ```rust
@@ -19,6 +48,7 @@ fn main() {
 ```shell
 $ rustc Hello_World.rs
 $ ./Hello_World
+
 Hello, World!
 ```
 
@@ -142,26 +172,68 @@ foo!(3);
 
 ### 结构体
 
+结构体是一个使用关键字 `struct` 定义的标称型(nominal)结构体类型
+
 ```rust
 struct Point { x: i32, y: i32 }
 let p = Point { x: 10, y: 11 };
 let px: i32 = p.x;
 ```
 
-结构体是一个使用关键字 `struct` 定义的标称型(nominal)结构体类型
-
-### 枚举
+#### 元组结构体
 
 ```rust
-enum Foo {
-  Bar,       // 0
-  Baz = 123, // 123
-  Quux,      // 124
-}
-
-let baz_discriminant = Foo::Baz as u32;
-assert_eq!(baz_discriminant, 123);
+struct Color (i32, i32, i32);
+let black = Color(0,0,0);
 ```
+
+#### 单元结构体
+
+不关心该类型的内容, 只关心它的行为。
+
+```rust
+struct Solution;
+impl Solution{
+    // ...
+}
+```
+
+### 语句与表达式
+
+在 rust 中，语句无需返回值，而表达式总要返回值
+
+#### 语句
+
+```rust
+let a = "hello".to_string();
+let b = a + " world";
+println!("{}", b);
+```
+
+#### 表达式
+
+```rust
+fn main(){
+    let x = {
+        let a = "hello".to_string();
+        a + " world"
+    };
+    println!("{}", x);
+    // hello world
+}
+```
+
+### 区间表达式
+<!--rehype:wrap-class=col-span-2-->
+
+产生式/句法规则         | 句法         | 类型                        | 区间语义
+:-                   | :-           | :-                         | :-
+RangeExpr            | `start..end` | std::ops::Range            | start ≤ x < end
+RangeFromExpr        | `start..`    | std::ops::RangeFrom        | start ≤ x
+RangeToExpr          | `..end`      | std::ops::RangeTo          | x < end
+RangeFullExpr        | `..`         | std::ops::RangeFull        | -
+RangeInclusiveExpr   | `start..=end`| std::ops::RangeInclusive   | start ≤ x ≤ end
+RangeToInclusiveExpr | `..=end`     | std::ops::RangeToInclusive | x ≤ end
 
 Rust 类型
 --------
@@ -220,6 +292,9 @@ println!("社区的名称是 {community_name}，它有 {no_of_members} 个成员
 查看: [字符串](#rust-字符串)
 
 ### 数组
+<!--rehype:wrap-class=row-span-2-->
+
+这里介绍的是固定长度的数组。rust 中常用的是集合类型 vec 表示的[动态数组](#rust-动态数组)
 
 ```rust
 ┌─────┬─────┬─────┬─────┬─────┬─────┐
@@ -234,27 +309,7 @@ println!("社区的名称是 {community_name}，它有 {no_of_members} 个成员
 let array: [i64; 6] = [92,97,98,99,98,94];
 ```
 
-### 多维数组
-<!--rehype:wrap-class=row-span-2-->
-
-```rust
-     j0   j1   j2   j3   j4   j5
-   ┌────┬────┬────┬────┬────┬────┐
-i0 | 1  | 2  | 3  | 4  | 5  | 6  |
-   ├────┼────┼────┼────┼────┼────┤
-i1 | 6  | 5  | 4  | 3  | 2  | 1  |
-   └────┴────┴────┴────┴────┴────┘
-```
-
 ----
-
-```rust
-let array: [[i64; 6] ;2] = [
-            [1,2,3,4,5,6],
-            [6,5,4,3,2,1]];
-```
-
-### 可变数组
 
 ```rust
 let mut array: [i32 ; 3] = [2,6,10];
@@ -272,14 +327,6 @@ let mut array: [ i64; 4] = [1,2,3,4];
 let mut slices: &[i64] = &array[0..3]
 println!("切片的元素是：{slices:?}");
 ```
-
-### 向量
-
-```rust
-let some_vector = vec![1,2,3,4,5]; 
-```
-
-使用 `vec!` 宏声明向量
 
 ### 元组
 
@@ -318,6 +365,14 @@ rand.capacity()  // => 13
 ```
 
 以字节为单位计算字符串的容量
+
+### with_capacity()
+
+```rust
+let s = String::with_capacity(10);
+```
+
+指定一个足够大的容量值,来减少内存拷贝
 
 ### .contains()
 
@@ -411,8 +466,28 @@ println!("{:?}", element2);
    }
    ```
 
+### 多维数组
+
+```rust
+     j0   j1   j2   j3   j4   j5
+   ┌────┬────┬────┬────┬────┬────┐
+i0 | 1  | 2  | 3  | 4  | 5  | 6  |
+   ├────┼────┼────┼────┼────┼────┤
+i1 | 6  | 5  | 4  | 3  | 2  | 1  |
+   └────┴────┴────┴────┴────┴────┘
+```
+
+----
+
+```rust
+let arr = vec![
+    vec![1, 2, 3, 4, 5, 6],
+    vec![6, 5, 4, 3, 2, 1]
+];
+```
+
 ### 常用方法
-<!--rehype:wrap-class=col-span-3-->
+<!--rehype:wrap-class=col-span-2-->
 
 -|:-
 -|:-
@@ -428,6 +503,231 @@ println!("{:?}", element2);
 `retain(f)`               | 根据给定的函数，保留满足条件的元素
 `drain(range)`            | 删除 `vec` 中指定范围的元素,同时返回一个迭代该范围所有元素的迭代器
 `split_off(index)`        | 切分 `vec`，索引左边的元素保留在原 `vec` 中(含索引)，索引右边的元素(不含索引)在返回的 `vec` 中
+
+Rust HashMap\<K,V>
+--------
+
+### 使用
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+  let mut map: HashMap<String, i32> = HashMap::new();
+  map.insert(String::from("blue"), 100);
+  // 查询Yellow对应的值，若不存在则插入默认值
+  let v: &mut i32 =
+    map.entry("Yellow".to_string()).or_insert(5);
+  let v: &mut i32 = 
+    map.entry("Yellow".to_string()).or_insert(50); // 不会修改值
+}
+```
+
+### 获取元素
+
+```rust
+let mut scores = HashMap::new();
+
+scores.insert(String::from("Blue"), 10);
+scores.insert(String::from("Yellow"), 50);
+
+let team_name = String::from("Blue");
+let score: Option<&i32> = scores.get(&team_name);
+```
+
+### 遍历
+
+```rust
+let mut scores = HashMap::new();
+
+scores.insert(String::from("Blue"), 10);
+scores.insert(String::from("Yellow"), 50);
+
+for (key, value) in &scores {
+    println!("{}: {}", key, value);
+}
+```
+
+### vec -> HashMap
+
+```rust
+let teams_list = vec![
+    ("中国队".to_string(), 100),
+    ("美国队".to_string(), 10),
+    ("日本队".to_string(), 50),
+];
+let teams_map: HashMap<_,_> =
+  teams_list.into_iter().collect();
+```
+
+----
+
+```rust
+let teams = vec![String::from("blue"),String::from("red")];
+let intial_scores = vec![10,50];
+let scores:HashMap<_,_> =
+  teams.iter().zip(intial_scores.iter()).collect();
+```
+
+Option & Result
+--------
+
+### Option
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+```
+
+#### 使用
+
+```rust
+fn main(){
+    let a = Some(5);
+    // 直接获取原始值
+    println!("{}", a.unwrap());
+    // 给出错误信息
+    let x: Option<&str> = None;
+    x.expect("fruits are healthy"); // panics 带有 `fruits are healthy`
+}
+```
+
+### Result
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+#### 使用
+
+```rust
+use std::fs::File;
+
+fn main() {
+    let f: Result<File,Error> = File::open("hello.txt");
+    let f = match f {
+        Ok(file) => file,
+        Err(error) => {
+            panic!("Problem opening the file: {:?}", error)
+        },
+    };
+}
+```
+
+### 宏 `?`
+
+`?` 只能用于返回结果是 Result 或者 Option 的函数,或者实现了 Try 类型
+
+```rust
+use std::fs::File;
+use std::io::{self, Read};
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut s = String::new();
+    File::open("hello.txt")?.read_to_string(&mut s)?;
+    Ok(s)
+}
+```
+
+----
+
+```rust
+fn first(arr: &[i32]) -> Option<&i32> {
+   let v = arr.get(0)?;
+   Some(v)
+}
+```
+
+<!--rehype:className=wrap-text -->
+
+枚举
+--------
+
+### 在结构体中使用枚举
+
+```rust
+enum IpAddrKind {
+  V4,
+  V6,
+}
+struct IpAddr {
+  kind: IpAddrKind,
+  address: String,
+}
+
+fn main(){
+    let ip = IpAddr{
+        kind: IpAddrKind::V4,
+        address: String::from("127.0.0.1")
+    };
+}
+```
+<!--rehype:className=wrap-text -->
+
+### 枚举的变体
+
+```rust
+enum IpAddrKind {
+  V4(u8, u8, u8, u8),
+  V6(String),
+}
+
+fn main() {
+  let home = IpAddrKind::V4(127, 0, 0, 1);
+  let loopback = IpAddrKind::V6(String::from("::1"));
+}
+```
+<!--rehype:className=wrap-text -->
+
+----
+
+```rust
+enum Message{
+  Quit,
+  Move {x:i32, y:i32},
+  Write(String),
+  ChangeColor(i32, i32, i32),
+}
+fn main(){
+  let q = Message::Quit;
+  let m = Message::Move {x:10, y:20};
+  let w = Message:: Write(String::from("hello"));
+  let c = Message::ChangeColor(10, 20, 30);
+}
+```
+<!--rehype:className=wrap-text -->
+
+### 模式匹配结构体
+
+```rust
+#[derive(Debug)]
+enum Grade {
+    A,
+    B,
+    C,
+}
+enum Subject {
+    Math(Grade),
+    English(Grade),
+}
+
+fn subject_grade(sub: Subject) {
+  match sub {
+    Subject::Math(grade) => println!("The Math is {:?}", grade),
+    Subject::English(grade) => println!("The Math is {:?}", grade),
+  }
+}
+
+fn main() {
+    subject_grade(Subject::Math(Grade::A));
+}
+```
+<!--rehype:className=wrap-text -->
 
 Rust 运算符
 -----------
@@ -503,7 +803,7 @@ let left_shift = h << 4;  // => 32
 示例 | 意义
 :- | :-
 `c && d` | 两者都是真的_(AND)_
-`c || d` | 要么是真的_(OR)_
+`c \|\| d` | 要么是真的_(OR)_
 `!c`     | `c` 为假 _(NOT)_
 
 ----
@@ -535,29 +835,7 @@ let mut l = k;
 Rust 流程控制
 ------------
 
-### If表达式
-
-```rust
-let case1: i32 = 81;
-let case2: i32 = 82;
-if case1 < case2 {
-  println!("case1 大于 case2");
-}
-```
-
-### If...Else 表达式
-
-```rust
-let case3 = 8;
-let case4 = 9;
-if case3 >= case4 {
-  println!("case3 优于 case4");
-} else {
-  println!("case4 大于 case3");
-}
-```
-
-### If...Else...if...Else 表达式
+### If 表达式
 
 ```rust
 let foo = 12;
@@ -573,93 +851,22 @@ if foo == bar {
 }
 ```
 
-### If...let 表达式
-<!--rehype:wrap-class=row-span-3-->
-
-```rust
-let mut arr1:[i64 ; 3] = [1,2,3];
-if let[1,2,_] = arr1{
-    println!("与数组一起使用");
-}
-let mut arr2:[&str; 2] = ["one", "two"];
-if let["Apple", _] = arr2{
-    println!("也适用于 str 数组");
-}
-```
-
-----
-
-```rust
-let tuple_1 = ("India", 7, 90, 90.432);
-if let(_, 7, 9, 78.99) = tuple_1{
-    println!("也适用于元组");
-}
-let tuple_2 = ( 9, 7, 89, 12, "Okay");
-if let(9, 7,89, 12, blank) = tuple_2 {
-    println!("一切{blank}伴侣？");
-}
-let tuple_3 = (89, 90, "Yes");
-if let(9, 89, "Yes") = tuple_3{
-    println!("模式确实匹配");
-}
-else {
-    println!("模式不匹配");
-}
-```
-
-### 匹配表达式
-<!--rehype:wrap-class=row-span-3-->
-
-```rust
-let day_of_week = 2;
-match day_of_week {
-  1 => {
-    println!("兄弟们今天是星期一");
-  },
-  2 => {
-    println!("兄弟们今天是星期二");
-  },
-  3 => {
-    println!("兄弟们今天是星期三");
-  },
-  4 => {
-    println!("兄弟们今天是星期四");
-  },
-  5 => {
-    println!("兄弟们今天是星期五");
-  },
-  6 => {
-    println!("兄弟们今天是星期六");
-  },
-  7 => {
-    println!("兄弟们今天是星期天");
-  },
-  _ => {
-    println!("默认!")
-  }
-};
-```
-
-### 嵌套...If 表达式
-
-```rust
-let nested_conditions = 89;
-if nested_conditions == 89 {
-    let just_a_value = 98;
-    if just_a_value >= 97 {
-        println!("大于 97");
-    }
-}
-```
-
 ### For 循环
+<!--rehype:wrap-class=col-span-2-->
 
 ```rust
-for mut i in 0..15 {
-  i-=1;
-  println!("i 的值为：{i}");
+let mut vec = [1, 2, 3];
+for v in &mut vec {
+  *v -= 1;
+  println!("v 的值为：{v}");
 }
 ```
+
+使用方法                      | 等价使用方式                         | 所有权
+:-|:-:|:-
+for item in collection      | for item in collection.into_iter() | 转移所有权
+for item in &collection     | for item in collection.iter()      | 不可变借用
+for item in &mut collection | for item in collection.iter_mut()  | 可变借用
 
 ### While 循环
 
@@ -667,7 +874,7 @@ for mut i in 0..15 {
 let mut check =  0;
 while check < 11{
   println!("check 是：{check}");
-  check+=1;
+  check += 1;
   println!("递增后：{check}");
   if check == 10{
     break; // 停止 while
@@ -675,7 +882,7 @@ while check < 11{
 }
 ```
 
-### Loop 关键字
+### Loop 循环
 
 ```rust
 loop {
@@ -684,19 +891,6 @@ loop {
 ```
 
 无限循环表示
-
-### Break 中断语句
-
-```rust
-let mut i = 1;
-loop {
-  println!("i 是 {i}");
-  if i > 100 {
-    break;
-  }
-  i *= 2;
-}
-```
 
 ### Continue 继续声明
 
@@ -711,116 +905,398 @@ for (v, c) in (0..10+1).enumerate(){
 }
 ```
 
+### Break 中断语句
+
+`break` 可以单独使用，也可以带一个返回值
+
+```rust
+let mut i = 1;
+let res = loop {
+  println!("i 是 {i}");
+  if i > 100 {
+    break i - 100;
+  }
+  i *= 2;
+}
+
+println!("{res}"); // 28
+```
+
+Rust 模式匹配
+--------
+
+### match
+<!--rehype:wrap-class=row-span-2-->
+
+match 模式匹配，使用 `a | b` 表示匹配 a **或** b，使用 `_`，表示匹配剩余所有选项
+
+```rust
+fn main(){
+  let grade = Grade::A;
+  match grade {
+    Grade::A => println!("Good"),
+    Grade::B => println!("Not bad"),
+    Grade::C | Grade::D => println!("Come on"),
+    _ => println!("emmm"),
+  }
+}
+
+enum Grade {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+}
+```
+<!--rehype:className=wrap-text -->
+
+#### `matches!` 宏
+
+它可以将一个表达式跟模式进行匹配，然后返回匹配的结果 `true` 或 `false`
+
+```rust
+assert!(matches!('x' ',A'..='Z' | 'a'..='z'));
+assert!(matches!(Some(101), Some(x) if x > 100));
+```
+<!--rehype:className=wrap-text -->
+
+### if let 匹配
+
+match 表达式需要匹配所有的枚举才能结束，但通常我们只需要匹配我们需要的值
+
+```rust
+let x = 3;
+match Some(x) {
+  Some(3) => println!("I guess that x is 3"),
+  _ => ()
+}
+```
+<!--rehype:className=wrap-text -->
+
+使用 `if let`
+
+```rust
+let x = 3;
+if let Some(3) = Some(x) {
+    println!("I guess that x is 3");
+}
+```
+
+### while let
+
+```rust
+let mut stack = vec![];
+
+stack.push(1);
+stack.push(2);
+stack.push(3);
+
+while let Some(top) = stack.pop() {
+    println!("{}", top);
+}
+```
+
+### 其它模式匹配
+
+#### for 循环迭代器
+
+```rust
+for (i, v) in collection.iter().enumerate(){}
+```
+<!--rehype:className=wrap-text -->
+
+#### let
+
+```rust
+let (x, _, y) = (1, 2, 3);
+println!("{x},{y}");
+```
+
+----
+
+```rust
+fn get_count_item(s: &str) -> (&str, &str) {
+    let mut it = s.split(' ');
+    let (Some(str1),Some(str2)) = (it.next(),it.next()) else {
+        panic!("Can't segment count item pair");
+    };
+    (str1, str2)
+}
+```
+
+### 函数中的模式匹配
+
+```rust
+fn add((x, y): (i32, i32)) -> i32 {
+    x + y
+}
+
+fn main(){
+  let sum = add(1, 2);
+  println!("{sum}");
+}
+```
+
+### 忽略参数
+<!--rehype:wrap-class=row-span-2-->
+
+#### 使用 `..` 忽略剩余参数
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+    z: i32,
+}
+
+let origin = Point { x: 0, y: 0, z: 0 };
+
+match origin {
+    Point { x, .. } => println!("x is {}", x),
+}
+```
+<!--rehype:className=wrap-text -->
+
+#### 使用 `_` 忽略部分参数
+
+```rust
+let hello = ('h', 'e', 'l', 'l', 'o');
+
+match hello {
+    (h, _, _, l, o) => {
+        println!("char: {}, {}, {}", h, l, o)
+    },
+}
+```
+<!--rehype:className=wrap-text -->
+
+### 匹配命名变量
+
+以下代码，只要给定的 x 是 Some 类型，但 Some 中的值不是 1，都会匹配到 y
+
+```rust
+let x = Some(10);
+match x {
+    Some(1) => println!("x = 1"),
+    Some(y) => println!("y = {:?}", y),
+    _ => println!("None"),
+}// y = 10
+```
+
+### `@` 绑定
+<!--rehype:wrap-class=row-span-2-->
+
+`@` 运算符允许为一个字段绑定另外一个变量。
+
+```rust
+let grade = 'A';
+match grade {
+    good @ 'A'..='C' => println!("your grade is {}", good),
+    _ => println!("Come on"),
+}
+```
+<!--rehype:className=wrap-text -->
+
+----
+
+```rust
+#[derive(Debug)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+fn main(){
+    let p @ Point {x: px, y: py } = Point {x: 10, y: 23};
+    println!("x: {}, y: {}", px, py);
+    println!("{:?}", p);
+}
+```
+<!--rehype:className=wrap-text -->
+
+----
+
+如果使用 `|`，需要使用 `()`，进行多个模式的绑定
+
+```rust
+match 1 {
+    num @ (1 | 2) => {
+        println!("{}", num);
+    }
+    _ => {}
+}
+```
+
+### 使用匹配守卫
+
+```rust
+let x = Some(2);
+match x {
+    Some(1) => println!("x = 1"),
+    Some(y) if y == 2 => println!("y = {:?}", y),
+    _ => println!("No match"),
+}// y = 2
+```
+<!--rehype:className=wrap-text -->
+
 Rust 函数
 --------
 
-### 基本函数
+### 函数命名
+
+rust 的函数使用蛇形命名法（snake case）
 
 ```rust
 fn print_message(){
   println!("Hello, Quick Reference!");
 }
+```
+
+### 参数值
+
+rust 需要为函数的参数标明确定的类型
+
+```rust
+fn another_fn(a:u8, b: &str){
+    println!("我是 u8:{}", a);
+    println!("我是 &str:{}", b);
+}
+
 fn main(){
-  // 在 Rust 中调用函数
-  print_message();
+    another_fn(10, "hello")
 }
 ```
 
-### 按值传递
+### 返回值
+
+如果不指定返回值，rust 默认返回 `()` 类型
 
 ```rust
-fn main()
-{
-  let x:u32 = 10;
-  let y:u32 = 20;
-  
-  // => 200
-  println!("计算: {}", cal_rect(x, y));
-}
-fn cal_rect(x:u32, y:u32) -> u32
-{
-  x * y
+// 在 bin 中的入口函数默认返回 ()
+fn main(){}
+```
+
+----
+
+使用 `->` 指定返回值，如果**表达式**在最后一行，无需使用 return
+
+```rust
+fn add(a:i32, b:i32) -> i32 {
+    if a + b < 100 {
+        return a - b;
+    }
+    a + b
 }
 ```
 
-### 通过引用传递
+### 永不返回 `!`
 
 ```rust
-fn main(){
-  let mut by_ref = 3;      // => 3
-  power_of_three(&mut by_ref);
-  println!("{by_ref}");  // => 9
-}
-fn power_of_three(by_ref: &mut i32){
-  // 取消引用很重要
-  *by_ref = *by_ref * *by_ref;
-  println!("{by_ref}");  // => 9
-}
-```
-
-### 返回
-
-```rust
-fn main(){
-  let (mut radius, mut pi) = (3.0, 3.14);
-  let(area, _perimeter) = calculate (
-      &mut radius,
-      &mut pi
-  );
-  println!("圆的面积和周长为：{area} & {_perimeter}");
-}
-fn calculate(radius : &mut f64, pi: &mut f64) -> (f64, f64){
-  let perimeter = 2.0 * *pi * *radius;
-  let area = *pi * *radius * *radius;
-  return (area, perimeter);
+fn dead_end() -> ! {
+    panic!("panic!!!!!");
 }
 ```
 <!--rehype:className=wrap-text -->
 
-### 数组作为参数
+惯用转换
+-----
+
+### &str -> String
 
 ```rust
-fn main(){
-  let mut array: [i32 ; 5] = [1,2,3,4,6];
-  print_arrays(array);
-  println!("元素：{array:?}");
-}
-fn print_arrays(mut array:[i32; 5]) {
-  array[0] = 89;
-  array[1] = 90;
-  array[2] = 91;
-  array[3] = 92;
-  array[4] = 93;
-  println!("元素：{array:?}");
-}
+String::from("str");
+"str".to_string();
+"str".to_owned();
 ```
 
-### 返回数组
+### &str -> &[u8]
 
 ```rust
-fn main(){
-  let mut arr:[i32; 5] = [2,4,6,8,10];
-  multiply(arr);
-  println!("数组是：{:?}", multiply(arr));
-}
-fn multiply (mut arr: [i32 ; 5]) -> [i32 ; 5]{
-  arr[2] = 90;
-  for mut i in 0..5 {
-      arr[i] = arr[i] * arr[2];
-  }
-  return arr;
-}
+"str".as_bytes();
 ```
-<!--rehype:className=wrap-text -->
 
-### 泛型函数
+或者你也可以使用 `b""`
 
 ```rust
-use std::fmt::Debug;
-fn foo<T>(x: &[T]) where T: Debug {
-    // 省略细节
-}
-foo(&[1, 2]);
+println!("{:?}", b"str");
+```
+
+### &str -> Vec<u8>
+
+```rust
+"str".as_bytes().to_vec();
+"str".as_bytes().to_owned();
+```
+
+### String -> &str
+
+```rust
+let s = String::from("str");
+let r = s.as_str();
+```
+
+### String -> &[u8]
+
+```rust
+let s = String::from("str");
+let v = s.as_bytes();
+```
+
+### String -> Vec<u8>
+
+```rust
+let s = String::from("str");
+let v = s.into_bytes();
+```
+
+### &[u8] -> &str
+
+```rust
+let b = "str".as_bytes();
+let str = std::str::from_utf8(b).unwrap();
+```
+
+### &[u8] -> String
+
+```rust
+let b = "str".as_bytes();
+let str = String::from_utf8(b.to_vec()).unwrap();
+```
+
+### &[u8] -> Vec<u8>
+
+```rust
+let b = "str".as_bytes();
+let str = b.to_vec();
+```
+
+----
+
+```rust
+let b = "str".as_bytes();
+let str = b.to_owned();
+```
+
+### Vec<u8> -> &str
+
+```rust
+let b = "str".as_bytes().to_vec();
+let s = std::str::from_utf8(&b).unwrap();
+```
+
+### Vec<u8> -> &[u8]
+
+```rust
+let b = "str".as_bytes().to_vec();
+let s = b.as_slice();
+```
+
+### Vec<u8> -> String
+
+```rust
+let b = "str".as_bytes().to_vec();
+let s = String::from_utf8(b).unwrap();
 ```
 
 杂项

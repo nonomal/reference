@@ -11,7 +11,7 @@ JavaScript 备忘清单
 JavaScript 是一种轻量级的解释型编程语言。
 
 - [JSON 备忘清单](json.md)
-- [JavaScript 中的正则表达式](/regex#regex-in-javascript)
+- [JavaScript 中的正则表达式](./regex.md#javascript-中的正则表达式)
 - [TypeScript 备忘清单](./typescript.md)
 
 ### 打印调试
@@ -42,6 +42,7 @@ function potentiallyBuggyCode() {
 let amount = 6;
 let price = 4.99;
 let home = 1e2;
+let num = 1_000_000; // 位数过多可以用 _ 分割
 let m = 0644;   // 八进制数字 420
 ```
 
@@ -87,7 +88,7 @@ console.log(single.length);
 
 ```javascript
 5 + 5 = 10     // 加法 Addition
-10 - 5 = 5     // 加法 Subtraction
+10 - 5 = 5     // 减法 Subtraction
 5 * 10 = 50    // 乘法 Multiplication
 10 / 5 = 2     // 除法 Division
 10 % 5 = 0     // 取模 Modulo
@@ -142,13 +143,24 @@ abc.concat(" ", str2);           // abc + " " + str2
 abc.charAt(2);                   // 索引处的字符：“c”
 abc[2];                          // 不安全，abc[2] = "C" 不起作用
 // 索引处的字符代码：“c”-> 99
-abc.charCodeAt(2);            
+abc.charCodeAt(2);
 // 用逗号分割字符串给出一个数组
-abc.split(",");               
+abc.split(",");
 // 分割字符
-abc.split("");                
+abc.split("");
+// 匹配开头字符串,如果忽略第二个参数，则从索引 0 开始匹配
+abc.startsWith("bc", 1);
+// 匹配结尾的字符串,如果忽略第二个参数，则默认是原字符串长度
+abc.endsWith("wxy", abc.length - 1);
+// padEnd 和 padStart 都用于填充长度，默认填充对象是空格
+"200".padEnd(5); // "200  "
+"200".padEnd(5, "."); // "200.."
+// 重复字符
+"abc".repeat(2); // "abcabc"
+// trim、trimEnd 和 trimStart 用于去除首尾空格
+" ab c ".trim(); // "ab c"
 // 数字转为十六进制 (16)、八进制 (8) 或二进制 (2)
-128.toString(16);             
+(128).toString(16);
 ```
 
 ### 数字
@@ -219,9 +231,9 @@ String(23);
 (23).toString();            
 // 从字符串返回数字
 Number("23");               
-// 解码 URI。 结果：“我的 page.asp”
+// 解码 URI。 结果：“my page.asp”
 decodeURI(enc);             
-// 编码 URI。 结果：“my%page.asp”
+// 编码 URI。 结果：“my%20page.asp”
 encodeURI(uri);             
 // 解码 URI 组件
 decodeURIComponent(enc);    
@@ -455,6 +467,15 @@ function sum(num1, num2) {
 }
 // 调用函数
 sum(2, 4); // 6
+```
+
+### 立即执行函数
+
+```javascript
+//命名函数并立即执行一次
+(function sum(num1, num2) {
+  return num1 + num2;
+})(2,4)//6
 ```
 
 ### 函数表达式
@@ -1176,6 +1197,193 @@ const myCat = {
 console.log(myCat.name);
 // 赋值调用 setter
 myCat.name = 'Yankee';
+```
+
+### Proxy
+
+Proxy 对象用于创建一个对象的代理，从而实现基本操作的拦截和自定义（如属性查找、赋值、枚举、函数调用等）。
+
+```javascript
+// 用于拦截对象的读取属性操作。
+const handler = {
+    get: function(obj, prop) {
+        return prop in obj ? obj[prop] : 37;
+    }
+};
+
+const p = new Proxy({}, handler);
+p.a = 1;
+p.b = undefined;
+
+console.log(p.a, p.b);      // 1, undefined
+console.log('c' in p, p.c); // false, 37
+```
+
+#### 语法
+
+```javascript
+const p = new Proxy(target, handler)
+```
+
+- target 要使用 Proxy 包装的目标对象（可以是任何类型的对象，包括原生数组，函数，甚至另一个代理）。
+- handler 一个通常以函数作为属性的对象，各属性中的函数分别定义了在执行各种操作时代理 p 的行为。
+
+#### 方法
+
+:- | :-
+:- | :-
+`Proxy.revocable()` | 创建一个可撤销的Proxy对象 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/revocable)
+
+#### handler 对象的方法
+
+:- | :-
+:- | :-
+`handler.getPrototypeOf()` | Object.getPrototypeOf 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/getPrototypeOf)
+`handler.setPrototypeOf()` | Object.setPrototypeOf 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/setPrototypeOf)
+`handler.isExtensible()` | Object.isExtensible 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/isExtensible)
+`handler.preventExtensions()` | Object.preventExtensions 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/preventExtensions)
+`handler.getOwnPropertyDescriptor()` | Object.getOwnPropertyDescriptor 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/getOwnPropertyDescriptor)
+`handler.defineProperty()` | Object.defineProperty 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/defineProperty)
+`handler.has()` | in 操作符的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/has)
+`handler.get()` | 属性读取操作的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/get)
+`handler.set()` | 属性设置操作的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/set)
+`handler.deleteProperty()` | delete 操作符的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/deleteProperty)
+`handler.ownKeys()` | Object.getOwnPropertyNames 方法和 Object.getOwnPropertySymbols 方法的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/ownKeys)
+`handler.apply()` | 函数调用操作的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/apply)
+`handler.construct()` | new 操作符的捕捉器 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/construct)
+<!--rehype:className=style-list-arrow-->
+
+### Reflect
+
+Reflect 是一个内置的对象，它提供拦截 JavaScript 操作的方法。这些方法与proxy handlers (en-US)的方法相同。Reflect不是一个函数对象，因此它是不可构造的。
+
+```javascript
+// 检测一个对象是否存在特定属性
+const duck = {
+  name: 'Maurice',
+  color: 'white',
+  greeting: function() {
+    console.log(`Quaaaack! My name is ${this.name}`);
+  }
+}
+
+Reflect.has(duck, 'color');
+// true
+Reflect.has(duck, 'haircut');
+// false
+```
+
+#### 静态方法
+
+:- | :-
+:- | :-
+`Reflect.apply(target, thisArgument, argumentsList)` | 对一个函数进行调用操作，同时可以传入一个数组作为调用参数。和 Function.prototype.apply() 功能类似 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/apply)
+`Reflect.construct(target, argumentsList[, newTarget])` | 对构造函数进行 new 操作，相当于执行 new target(...args) [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/construct)
+`Reflect.defineProperty(target, propertyKey, attributes)` | 和 Object.defineProperty() 类似。如果设置成功就会返回 true [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/defineProperty)
+`Reflect.deleteProperty(target, propertyKey)` | 作为函数的delete操作符，相当于执行 delete target[name] [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/deleteProperty)
+`Reflect.get(target, propertyKey[, receiver])` | 获取对象身上某个属性的值，类似于 target[name] [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/get)
+`Reflect.getOwnPropertyDescriptor(target, propertyKey)`  | 类似于 Object.getOwnPropertyDescriptor()。如果对象中存在该属性，则返回对应的属性描述符，否则返回 undefined [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/getOwnPropertyDescriptor)
+`Reflect.getPrototypeOf(target)` | 类似于 Object.getPrototypeOf() [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/getPrototypeOf)
+`Reflect.has(target, propertyKey)` | 判断一个对象是否存在某个属性，和 in 运算符 的功能完全相同 [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/has)
+`Reflect.isExtensible(target)` | 类似于 Object.isExtensible() [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/isExtensible)
+`Reflect.ownKeys(target)` | 返回一个包含所有自身属性（不包含继承属性）的数组。(类似于 Object.keys(), 但不会受enumerable 影响) [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/ownKeys)
+`Reflect.preventExtensions(target)` | 类似于 Object.preventExtensions()。返回一个Boolean [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/preventExtensions)
+`Reflect.set(target, propertyKey, value[, receiver])` | 将值分配给属性的函数。返回一个Boolean，如果更新成功，则返回true [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/set)
+`Reflect.setPrototypeOf(target, prototype)` | 设置对象原型的函数。返回一个 Boolean，如果更新成功，则返回 true [#](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect/setPrototypeOf)
+<!--rehype:className=style-list-arrow-->
+
+JavaScript this 绑定
+----
+
+### 隐式绑定
+
+```js
+function foo() {
+  console.log(this)
+}
+let obj1 = {
+  name: "obj1",
+  foo: foo
+}
+let obj2 = {
+  name: "obj2",
+  obj1: obj1
+}
+obj2.obj1.foo() // [Object obj1]
+```
+
+#### 隐式丢失
+
+```js
+let a = obj2.obj1.foo()
+a() // Window
+```
+
+- 指定隐式绑定：必须在调用的对象内部有一个对函数的引用（比如一个属性）
+- 将以上调用赋值给一个变量，结果最终会是 Window
+- 在 a 被调用的位置没有进行过任何显示绑定，最终全局对象 window 会调用它（`Window.a`）
+<!--rehype:className=style-round-->
+
+### 显示绑定
+
+```js
+function getName(a1, a2) {
+  console.log("此人" + this.name, "岁数" + (a1 + a2))
+}
+let person = {
+  name: "zhangsan"
+}
+```
+
+#### call
+
+call 第一个参数接受 this 作用域，剩余参数传递给其调用的函数
+
+```js
+getName.call(person, 18, 12)
+```
+
+#### apply
+
+apply 第一个参数与 call 相同，第二个参数是其调用函数的参数数组
+
+```js
+getName.apply(person, [18, 12])
+```
+
+#### bind
+
+bind 函数会返回一个新函数
+
+```js
+getName.bind(person,18,12)()
+//或者可以这样
+getName.bind(person)(18, 12)
+//或者这样
+getName.bind(person).bind(null, 18)(12)
+```
+
+### 内置函数中的 this
+
+数组中的一些方法，类似于 map、forEach 等，可以自己设置绑定 this
+
+```js
+const obj = {
+  name: "zhangsan"
+}
+const array = [1, 2, 3];
+array.map(function(value){
+  console.log(this.name)
+}, obj)
+// zhangsan x3 
+```
+
+其中一些全局对象，如 setTimeout 等，它们和未显示绑定 this 的部分数组方法一样，都会指向全局对象（`Window`）
+
+```js
+setTimeout(function(){ 
+  console.log(this)
+}, 1000) // Window
 ```
 
 JavaScript Classes

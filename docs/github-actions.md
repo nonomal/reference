@@ -155,6 +155,27 @@ jobs:
       - run: echo ${{needs.job1.outputs.output1}} ${{needs.job1.outputs.output2}}
 ```
 
+### 定时触发
+
+可以使用 cron 表达式配置周期性任务，定时执行
+
+```yaml
+name: schedule task
+
+# 要注意时差，最好手动指定时区
+env:
+  TZ: Asia/Shanghai
+
+on:
+  # push 到 main 分支时执行任务
+  push:
+    branches:
+      - main
+  # 每隔两小时自动执行任务
+  schedule:
+   - cron: '0 0/2 * * *'
+```
+
 ### 指定每项任务的虚拟机环境
 
 ```yml
@@ -260,21 +281,21 @@ env:
 #### 操作符
 
 - `( )` _(逻辑分组)_
-- `[ ]` _(指数)_
-- `.` _(属性取消引用)_
-- `!` _(不是)_
-- `<` _(少于)_
+- `[ ]` _(索引)_
+- `.` _(属性解引用)_
+- `!` _(非)_
+- `<` _(小于)_
 - `<=` _(小于或等于)_
-- `>` _(比...更棒)_
+- `>` _(大于)_
 - `>=` _(大于或等于)_
-- `==` _(平等的)_
-- `!=` _(不相等)_
+- `==` _(相等)_
+- `!=` _(不等)_
 - `&&` _(和)_
-- `||` _(或者)_
+- `||` _(或)_
 <!--rehype:className=cols-2 style-none-->
 
 ### Github 上下文
-<!--rehype:wrap-class=col-span-2-->
+<!--rehype:wrap-class=col-span-2 row-span-3-->
 
 属性名称 | 类型 | 描述
 ---- | ---- | ----
@@ -300,7 +321,49 @@ env:
 
 [Github 上下文](https://help.github.com/cn/actions/reference/context-and-expression-syntax-for-github-actions)是访问有关工作流运行、运行器环境、作业和步骤的信息的一种方式
 
+### 直接常量
+
+作为表达式的一部分，可以使用 `boolean`, `null`, `number` 或 `string`数据类型
+
+```yml
+env:
+  myNull: ${{ null }}
+  myBoolean: ${{ false }}
+  myIntegerNumber: ${{ 711 }}
+  myFloatNumber: ${{ -9.2 }}
+  myHexNumber: ${{ 0xff }}
+  myExponentialNumber: ${{ -2.99e-2 }}
+  myString: Mona the Octocat
+  myStringInBraces: ${{ 'It''s source!' }}
+```
+
+### 函数 contains
+
+使用字符串的示例
+
+```js
+contains('Hello world', 'llo') // 返回 true
+```
+
+使用对象过滤器的示例返回 true
+
+```js
+contains(github.event.issue.labels.*.name, 'bug')
+```
+<!--rehype:className=wrap-text -->
+
+另见: [函数 contains](https://docs.github.com/cn/actions/learn-github-actions/expressions#contains)
+
+### 函数 startsWith
+
+```js
+startsWith('Hello world', 'He') // 返回 true
+```
+
+另见: [函数 startsWith](https://docs.github.com/cn/actions/learn-github-actions/expressions#startswith)，此函数不区分大小写
+
 ### 默认环境变量
+<!--rehype:wrap-class=row-span-8 col-span-2-->
 
 环境变量 | 描述
 ---- | ----
@@ -326,49 +389,6 @@ env:
 
 另见: [默认环境变量](https://docs.github.com/cn/actions/learn-github-actions/environment-variables#default-environment-variables)
 
-### 直接常量
-<!--rehype:wrap-class=row-span-2-->
-
-作为表达式的一部分，可以使用 `boolean`, `null`, `number` 或 `string`数据类型
-
-```yml
-env:
-  myNull: ${{ null }}
-  myBoolean: ${{ false }}
-  myIntegerNumber: ${{ 711 }}
-  myFloatNumber: ${{ -9.2 }}
-  myHexNumber: ${{ 0xff }}
-  myExponentialNumber: ${{ -2.99e-2 }}
-  myString: Mona the Octocat
-  myStringInBraces: ${{ 'It''s source!' }}
-```
-
-### 函数 contains
-<!--rehype:wrap-class=row-span-2-->
-
-使用字符串的示例
-
-```js
-contains('Hello world', 'llo') // 返回 true
-```
-
-使用对象过滤器的示例返回 true
-
-```js
-contains(github.event.issue.labels.*.name, 'bug')
-```
-<!--rehype:className=wrap-text -->
-
-另见: [函数 contains](https://docs.github.com/cn/actions/learn-github-actions/expressions#contains)
-
-### 函数 startsWith
-
-```js
-startsWith('Hello world', 'He') // 返回 true
-```
-
-另见: [函数 startsWith](https://docs.github.com/cn/actions/learn-github-actions/expressions#startswith)，此函数不区分大小写
-
 ### 函数 format
 
 ```js
@@ -382,7 +402,7 @@ format('{{Hello {0} {1} {2}!}}', 'Mona', 'the', 'Octocat')
 ### 函数 join
 
 ```js
-join(github.event.issue.labels.*.name, ', ')
+join(github.event.issue.labels.*.name,', ')
 // 也许返回 'bug, help wanted'.
 ```
 
@@ -414,7 +434,7 @@ toJSON(job)
 ```yml
 steps:
   ...
-  - name: The job has succeeded
+  - name: 作业已成功
     if: ${{ success() }}
 ```
 
@@ -423,7 +443,7 @@ steps:
 ```yml
 steps:
   ...
-  - name: The job has failed
+  - name: 作业失败
     if: ${{ failure() }}
 ```
 
@@ -554,6 +574,7 @@ jobs:
 
 ```yml
 - run: npm publish --access public
+  continue-on-error: true
   env:
     NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 ```
@@ -583,14 +604,15 @@ npm token revoke <id|token> # 撤销
 
 Artifacts 是 GitHub Actions 为您提供持久文件并在运行完成后使用它们或在作业（文档）之间共享的一种方式。
 
-要创建工件并使用它，您将需要不同的操作：上传和下载。
+- 要创建工件并使用它，您将需要不同的操作：上传和下载
+
 要上传文件或目录，您只需像这样使用它：
 
 ```yml
 steps:
   - uses: actions/checkout@v2
   - run: mkdir -p path/to/artifact
-  - run: echo hello > path/to/artifact/a.txt
+  - run: echo hello > path/to/file/a.txt
   - uses: actions/upload-artifact@v2
     with:
       name: my-artifact
@@ -829,13 +851,420 @@ steps:
 [`coverage-badges-cli`](https://github.com/jaywcjlove/coverage-badges-cli) | 生成覆盖率徽章(Badges)图片
 [`action-ejs`](https://github.com/jaywcjlove/action-ejs) | 基于 ejs 生成 HTML
 [`github-action-package`](https://github.com/jaywcjlove/github-action-package) | 修改 JSON 文件内容
+[`github-action-read-file`](https://github.com/jaywcjlove/github-action-read-file) | 读取文件内容
 [`markdown-to-html-cli`](https://github.com/jaywcjlove/markdown-to-html-cli) | Markdown 转换成 HTML
 [`ncipollo/release-action`](https://github.com/ncipollo/release-action) | 创建 `Release`
 [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages) | 将文件或文件夹内容提交到 `gh-pages` 分支
 <!--rehype:className=style-list-->
+
+### 在 Github 中创建 Docker 镜像
+<!--rehype:wrap-class=row-span-2 col-span-2-->
+
+```yml
+- name: Set up Docker Buildx
+  uses: docker/setup-buildx-action@v2
+- name: 登录 GitHub 容器注册表
+  uses: docker/login-action@v2
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+
+- name: 构建并推送 image:latest
+  uses: docker/build-push-action@v3
+  with:
+    push: true
+    context: .
+    platforms: linux/amd64,linux/arm64
+    tags: ghcr.io/jaywcjlove/reference:latest
+
+- name: 构建并推送 image:tags
+  uses: docker/build-push-action@v3
+  if: steps.create_tag.outputs.successful
+  with:
+    push: true
+    context: .
+    platforms: linux/amd64,linux/arm64
+    tags: ghcr.io/jaywcjlove/reference:${{steps.changelog.outputs.version}}
+```
+
+### 生成贡献者头像列表
+
+```yml
+- name: Generate Contributors Images
+  uses: jaywcjlove/github-action-contributors@main
+  id: contributors
+  with:
+    output: dist/CONTRIBUTORS.svg
+    avatarSize: 42
+```
+
+### 在 Docker Hub 中创建 Docker 镜像
+<!--rehype:wrap-class=row-span-3 col-span-2-->
+
+```yml
+- name: Set up Docker Buildx
+  uses: docker/setup-buildx-action@v2
+- name: 登录到 Docker Hub
+  uses: docker/login-action@v2
+  with:
+    username: ${{ secrets.DOCKER_USER }}
+    password: ${{ secrets.DOCKER_PASSWORD }}
+
+- name: 构建并推送 image:latest
+  uses: docker/build-push-action@v3
+  with:
+    push: true
+    context: .
+    platforms: linux/amd64,linux/arm64
+    tags: ${{ secrets.DOCKER_USER }}/reference:latest
+
+- name: 构建并推送 image:tags
+  uses: docker/build-push-action@v3
+  if: steps.create_tag.outputs.successful
+  with:
+    push: true
+    context: .
+    platforms: linux/amd64,linux/arm64
+    tags: ${{ secrets.DOCKER_USER }}/reference:${{steps.changelog.outputs.version}}
+```
+
+### 检查签出仓库并安装 nodejs
+
+```yml
+- uses: actions/checkout@v3
+- uses: actions/setup-node@v3
+  with:
+    node-version: 16
+```
+
+### 忽略失败
+
+```yml
+- run: npm publish
+  continue-on-error: true
+  env:
+    NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+```
+
+当 `npm` 推送包失败不影响整个流程，可用于自动发包
+
+### 安装 yarn
+
+```yml
+- name: Setup Yarn
+  uses: threeal/setup-yarn-action@v2.0.0
+  with:
+    cache: false
+    version: 1.22.21
+```
+
+### 传递环境变量
+<!--rehype:wrap-class=col-span-2-->
+
+在 `ci.yml` 上保存环境变量
+
+```yml
+- name: Save commit message to environment variable
+  run: echo "COMMIT_MESSAGE=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+```
+
+在 `tag.yml` 上获取环境变量
+
+```yml
+- name: Read commit message
+  run: |
+    echo "Commit: ${{ github.event.workflow_run.head_commit.message }}"
+```
+
+### 触发下一个工作流
+
+在 `tag.yml` 上添加判断 `tag` 创建成功触发 `tag-creation-success` 的工作流
+
+```yml
+- name: Trigger next workflow if successful
+  if: steps.check_success.outputs.success == 'true'
+  run: |
+    curl -X POST \
+      -H "Accept: application/vnd.github.v3+json" \
+      -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      -d '{"event_type": "tag-creation-success"}' \
+      https://api.github.com/repos/${{ github.repository }}/dispatches
+```
+
+在 `success.yml` 上监听
+
+```yml
+on:
+  repository_dispatch:
+    types: [tag-creation-success]
+```
+
+GitLab CI/CD 迁移到 GitHub Actions
+---
+
+### 语法示例
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+job1:
+  variables:
+    GIT_CHECKOUT: "true"
+  script:
+    - echo "Run your script here"
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  job1:
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "Run your script here"
+```
+
+### 运行程序
+<!--rehype:wrap-class=row-span-2-->
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+windows_job:
+  tags:
+    - windows
+  script:
+    - echo Hello, %USERNAME%!
+
+linux_job: tags:
+    - linux script:
+    - echo "Hello, $USER!"
+```
+
+GitHub Actions
+
+```yml
+windows_job:
+  runs-on: windows-latest
+  steps:
+    - run: echo Hello, %USERNAME%!
+
+linux_job:
+  runs-on: ubuntu-latest
+  steps:
+    - run: echo "Hello, $USER!"
+```
+
+在不同的平台上运行作业
+
+### Docker 映像
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+my_job:
+  image: node:10.16-jessie
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  my_job:
+    container: node:10.16-jessie
+```
+
+### 条件和表达式语法
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+deploy_prod:
+  stage: deploy
+  script:
+    - echo "部署到生产服务器"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  deploy_prod:
+    if: contains( github.ref, 'master')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "部署到生产服务器"
+```
+
+### Artifacts
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+script:
+artifacts:
+  paths:
+    - math-homework.txt
+```
+
+GitHub Actions
+
+```yml
+- name: Upload math result for job 1
+  uses: actions/upload-artifact@v3
+  with:
+    name: homework
+    path: math-homework.txt
+```
+
+### 作业之间的依赖关系
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+stages:
+  - build
+  - test
+  - deploy
+
+build_a: stage: build script:
+    - echo "该作业将首先运行"
+
+build_b: stage: build script:
+    - echo "该作业将首先运行，与 build_a 并行"
+
+test_ab: stage: test script:
+    - echo "此作业将在 build_a 和 build_b 完成后运行"
+
+deploy_ab: stage: deploy script:
+    - echo "此作业将在 test_ab 完成后运行"
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  build_a:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "该作业将首先运行"
+
+  build_b:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "该作业将首先运行，与 build_a 并行"
+
+  test_ab:
+    runs-on: ubuntu-latest
+    needs: [build_a,build_b]
+    steps:
+      - run: echo "此作业将在 build_a 和 build_b 完成后运行"
+
+  deploy_ab:
+    runs-on: ubuntu-latest
+    needs: [test_ab]
+    steps:
+      - run: echo "此作业将在 test_ab 完成后运行"
+```
+
+### 缓存
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+image: node:latest
+
+cache: key: $CI_COMMIT_REF_SLUG paths:
+    - .npm/
+
+before_script:
+  - npm ci --cache .npm --prefer-offline
+
+test_async: script:
+    - node ./specs/start.js ./specs/async.spec.js
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  test_async:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: v1-npm-deps-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: v1-npm-deps-
+```
+
+### 数据库和服务容器
+
+<yel>GitLab CI/CD</yel>
+
+```yml
+container-job:
+  variables:
+    POSTGRES_PASSWORD: postgres
+    # PostgreSQL 服务容器通信的主机名
+    POSTGRES_HOST: postgres
+    # 默认的 PostgreSQL 端口
+    POSTGRES_PORT: 5432
+  image: node:10.18-jessie
+  services:
+    - postgres
+  script:
+    # 执行 package.json 文件中
+    # 所有依赖项的全新安装
+    - npm ci
+    # 运行创建 PostgreSQL 客户端的脚本，
+    # 用数据填充客户端，并检索数据
+    - node client.js
+  tags:
+    - docker
+```
+
+GitHub Actions
+
+```yml
+jobs:
+  container-job:
+    runs-on: ubuntu-latest
+    container: node:10.18-jessie
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      # 执行 package.json 文件中
+      # 所有依赖项的全新安装
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Connect to PostgreSQL
+        # 运行创建 PostgreSQL 客户端的脚本，
+        # 用数据填充客户端，并检索数据
+        run: node client.js
+        env:
+          # PostgreSQL 服务容器通信的主机名
+          POSTGRES_HOST: postgres
+          # 默认的 PostgreSQL 端口
+          POSTGRES_PORT: 5432
+```
 
 另见
 ---
 
 - [Github Actions 学习笔记](https://jaywcjlove.github.io/github-actions) _(jaywcjlove.github.io)_
 - [了解 GitHub Actions](https://docs.github.com/cn/actions/learn-github-actions) _(docs.github.com)_
+- [从 GitLab CI/CD 迁移到 GitHub Actions](https://docs.github.com/cn/actions/migrating-to-github-actions/migrating-from-gitlab-cicd-to-github-actions) _(docs.github.com)_

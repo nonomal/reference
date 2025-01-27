@@ -21,6 +21,7 @@ npm 备忘清单
 `npm install <package_name>@<tag>` | 使用 `dist-tags` 安装包
 `npm install -g <package_name>`    | 全局安装包
 `npm uninstall <package_name>`     | 卸载包
+`npm uninstall -g <package_name>`  | 全局卸载包
 <!--rehype:class=auto-wrap-->
 
 ### 安装
@@ -140,6 +141,7 @@ $ npm owner add <their-username> <package-name> --otp=123456
 $ npm publish
 # 第一次需要指定公开参数
 $ npm publish --access public
+$ npm publish --access public --tag previous
 ```
 
 发布公开包，到 [npmjs.org](https://docs.npmjs.com)
@@ -154,6 +156,153 @@ $ nrm ls
 $ nrm use cnpm       
 ```
 
+### init
+
+用于设置新的或现有的 `npm` 包
+
+```bash
+$ npm init <package-spec> # (如同 `npx <package-spec>)
+$ npm init <@scope>       # (如同 `npx <@scope>/create`)
+```
+
+别名: `create`, `innit`
+
+:- | --
+:- | --
+`npm init foo` | `npm exec create-foo`
+`npm init @usr/foo` | `npm exec @usr/create-foo`
+`npm init @usr` | `npm exec @usr/create`
+`npm init @usr@2.0.0` | `npm exec @usr/create@2.0.0`
+`npm init @usr/foo@2.0.0` | `npm exec @usr/create-foo@2.0.0`
+<!--rehype:className=left-align-->
+
+### exec
+
+命令允许您在与通过 `npm run` 运行它类似的上下文中从 npm 包
+
+```bash
+$ npm exec -- <pkg>[@<version>] [args...]
+$ npm exec --package=<pkg>[@<version>] -- <cmd> [args...]
+$ npm exec -c '<cmd> [args...]'
+$ npm exec --package=foo -c '<cmd> [args...]'
+```
+
+别名: x
+
+```bash
+$ npm exec --package yo --package generator-node --call "yo node"
+
+$ npm exec --package=foo -- bar --bar-argument
+# ~ or ~
+$ npx --package=foo bar --bar-argument
+```
+
+npx
+---
+
+### 介绍
+
+从本地或远程 npm 包运行命令
+
+```bash
+npx -- <pkg>[@<version>] [args...]
+npx --package=<pkg>[@<version>] -- <cmd> [args...]
+npx -c '<cmd> [args...]'
+npx --package=foo -c '<cmd> [args...]'
+```
+<!--rehype:className=wrap-text-->
+
+`npx` 二进制文件在 `npm v7.0.0` 中被重写，并且当时不推荐使用独立的 `npx` 包
+
+```bash
+$ npm install eslint
+# 运行：
+$ ./node_modules/.bin/eslint
+```
+
+上面命令简化，直接运行下面👇命令
+
+```bash
+$ npx eslint
+```
+
+命令 `npx` 将自动安装并运行 `eslint`
+
+### npx VS npm exec
+
+```bash
+$ npx foo@latest bar --package=@npmcli/foo
+# npm 将解析 foo 包名，并运行以下命令：
+$ foo bar --package=@npmcli/foo
+```
+<!--rehype:className=wrap-text-->
+
+由于 npm 的参数解析逻辑，运行这个命令是不同的:
+
+```bash
+$ npm exec foo@latest bar --package=@npmcli/foo
+# npm 将首先解析 --package 选项
+# 解析 @npmcli/foo 包
+# 然后，它将在该上下文中执行以下命令：
+$ foo@latest bar
+```
+<!--rehype:className=wrap-text-->
+
+下面命令是与 `npx` 等效的
+
+```bash
+$ npm exec -- foo@latest bar --package=@npmcli/foo
+# 等效的
+$ npx foo@latest bar --package=@npmcli/foo
+```
+<!--rehype:className=wrap-text-->
+
+### npx VS npm exec 示例
+
+使用提供的参数在本地依赖项中运行 `tap` 版本：
+
+```bash
+$ npm exec -- tap --bail test/foo.js
+$ npx tap --bail test/foo.js
+```
+
+通过指定 `--package` 选项运行名称与包名称匹配的命令以外的命令：
+
+```bash
+$ npm exec --package=foo -- bar --bar-argument
+# ~ or ~
+$ npx --package=foo bar --bar-argument
+```
+<!--rehype:className=wrap-text-->
+
+在当前项目的上下文中运行任意 `shell` 脚本：
+
+```bash
+$ npm x -c 'eslint && say "hooray, lint passed"'
+$ npx -c 'eslint && say "hooray, lint passed"'
+```
+<!--rehype:className=wrap-text-->
+
+### 创建一个 React Naive 项目
+
+```bash
+$ npx react-native init AwesomeProject
+$ npx react-native init AwesomeTSProject --template react-native-template-typescript
+```
+<!--rehype:className=wrap-text-->
+
+使用 `npx` 直接创建一个  [React Native](https://reactnative.dev/docs/environment-setup#creating-a-new-application) 应用
+
+### 创建一个 React 应用
+
+```bash
+$ npx create-react-app my-app
+$ npx create-react-app my-app --template typescript
+```
+<!--rehype:className=wrap-text-->
+
+使用 `npx` 跳过安装 [CRA](https://reactnative.dev/docs/environment-setup#creating-a-new-application)，直接创建一个 [React](./react.md) 应用
+
 配置
 ---
 
@@ -165,6 +314,7 @@ $ nrm use cnpm
 `~/.npmrc` | 每个用户的配置文件
 `$PREFIX/etc/npmrc` | 全局配置文件
 `/path/to/npm/npmrc` | npm 内置配置文件
+<!--rehype:className=left-align-->
 
 ### 配置内容
 
@@ -187,6 +337,7 @@ $ nrm use cnpm
 `cnpm` | <https://r.cnpmjs.org/>
 `taobao` | <https://registry.npmmirror.com/>
 `npmMirror` | <https://skimdb.npmjs.com/registry/>
+<!--rehype:className=left-align-->
 
 ### `.npmignore`
 
@@ -292,3 +443,4 @@ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-
 
 - [npm 仓库、网站和命令行界面的文档](https://docs.npmjs.com/) _(npmjs.com)_
 - [npmmirror 中国镜像站](https://npmmirror.com/) _(npmmirror.com)_
+- [Dev Cheatsheets npx](https://michaelcurrin.github.io/dev-cheatsheets/cheatsheets/package-managers/javascript/npm/commands/npx.html) _(michaelcurrin.github.io)_
